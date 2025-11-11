@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="never">
+    <title>HAPPY BIRTHDAY</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
+            font-family: "Microsoft YaHei", sans-serif;
+            height: 100vh;
+            width: 100vw;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #popup-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .popup {
+            position: absolute;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            padding: 15px;
+            box-sizing: border-box;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .popup:hover {
+            transform: scale(1.05);
+            z-index: 1001;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 20px;
+            color: #666;
+            cursor: pointer;
+            background: rgba(255,255,255,0.5);
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1002;
+        }
+
+        .heart {
+            position: absolute;
+            font-size: 24px;
+            opacity: 0.7;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .message {
+            z-index: 2;
+            position: relative;
+            font-weight: bold;
+        }
+
+        #musicControl {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 2000;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 25px;
+            padding: 12px 18px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            font-size: 16px;
+            border: 2px solid rgba(255,182,193,0.5);
+            font-weight: bold;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .final-hint {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px 50px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            text-align: center;
+            font-size: 28px;
+            z-index: 1001;
+            color: #ff6b6b;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        #countdown-display {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 16px;
+            z-index: 2001;
+            font-family: Arial, sans-serif;
+        }
+
+        #countdown-timer {
+            font-weight: bold;
+            color: #ffcc00;
+        }
+
+        /* 微信优化样式 */
+        .weixin-tip {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: #ffcc00;
+            color: #333;
+            text-align: center;
+            padding: 10px;
+            z-index: 3000;
+            font-size: 14px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="weixin-tip" id="weixinTip">请点击上方"..."选择在浏览器中打开以获得最佳体验</div>
+    <div id="popup-container"></div>
+    
+    <!-- 音频元素 - 使用可靠的音频源 -->
+    <audio id="bgMusic" loop preload="auto">
+        <source src="https://music.163.com/song/media/outer/url?id=1963443271.mp3" type="audio/mpeg">
+        您的浏览器不支持音频元素。
+    </audio>
+
+    <script>
+        // 检测微信环境
+        function isWeixin() {
+            return /micromessenger/i.test(navigator.userAgent);
+        }
+
+        // 提示文字列表
+        const tips = [
+            '你是最最最棒的ദ്ദദി˶˶ｰｰ̀֊֊ｰｰ́ )✧✧', 
+            '我最最最最喜欢你 ˃˃̶̶͈͈ ꇴꇴꇴ ˂˂̶̶͈͈',
+            '天冷了，多穿衣服', 
+            '我想你了',
+            '期待下一次见面',
+            '多喝水哦~',
+            '别熬夜(∗ᵒᵒᵒ̶̶̶̶̷̷̀ω˂˂̶̶́∗)੭੭₎₎₎₎̊̊₊₊♡♡',
+            '早点休息',
+            '好好爱自己',
+            '今天过得开心嘛',
+            '生日快乐',
+            '全世界你最美',
+            '永远做自己',
+            '都是最好的安排',
+            '爱你呦',
+            'HAPPY BIRTHDAY🎂',
+        ];
+
+        const bgColors = [
+            'rgba(255,182,193,0.9)', 'rgba(135,206,235,0.9)', 'rgba(144,238,144,0.9)', 
+            'rgba(230,230,250,0.9)', 'rgba(255,255,224,0.9)', 'rgba(221,160,221,0.9)',
+            'rgba(255,127,80,0.9)', 'rgba(255,228,196,0.9)', 'rgba(127,255,212,0.9)'
+        ];
+
+        let musicStarted = false;
+        const bgMusic = document.getElementById('bgMusic');
+        let popupCount = 0;
+        const totalPopups = 50; // 减少弹窗数量提高性能
+        let activePopups = 0;
+        let countdownInterval;
+        let countdownDisplay;
+
+        // 显示微信提示
+        if (isWeixin()) {
+            document.getElementById('weixinTip').style.display = 'block';
+        }
+
+        const musicBtn = document.createElement('div');
+        musicBtn.id = 'musicControl';
+        musicBtn.innerHTML = '🎵🎵 点击开始';
+        document.body.appendChild(musicBtn);
+
+        // 微信兼容的播放函数
+        function weixinAudioPlay(audioElement, successCallback, errorCallback) {
+            if (window.WeixinJSBridge) {
+                window.WeixinJSBridge.invoke('getNetworkType', {}, () => {
+                    audioElement.play().then(successCallback).catch(errorCallback);
+                });
+            } else {
+                // 如果WeixinJSBridge不存在，尝试直接播放
+                audioElement.play().then(successCallback).catch(errorCallback);
+            }
+        }
+
+        musicBtn.addEventListener('click', function() {
+            if (!musicStarted) {
+                const playSuccess = () => {
+                    musicStarted = true;
+                    musicBtn.innerHTML = '🎵🎵 快乐邮递局';
+                    musicBtn.style.background = 'rgba(255,182,193,0.9)';
+                    createCountdownDisplay();
+                    createMultiplePopups(totalPopups);
+                    
+                    setTimeout(() => {
+                        const popups = document.querySelectorAll('.popup');
+                        popups.forEach(popup => {
+                            popup.style.opacity = '0';
+                            popup.style.transform = 'scale(0.8)';
+                            setTimeout(() => {
+                                if (popup.parentNode) {
+                                    popup.parentNode.removeChild(popup);
+                                    activePopups--;
+                                    checkAllPopupsClosed();
+                                }
+                            }, 300);
+                        });
+                    }, 50000);
+                };
+
+                const playError = (error) => {
+                    console.log('播放失败:', error);
+                    musicBtn.innerHTML = '🎵🎵 播放失败，点击重试';
+                    // 显示手动播放提示
+                    if (isWeixin()) {
+                        alert('请在微信中点击右上角"..."，选择"在浏览器中打开"以获得完整体验');
+                    }
+                };
+
+                // 微信环境使用特殊播放方式
+                if (isWeixin()) {
+                    weixinAudioPlay(bgMusic, playSuccess, playError);
+                } else {
+                    bgMusic.play().then(playSuccess).catch(playError);
+                }
+            } else {
+                if (bgMusic.paused) {
+                    bgMusic.play();
+                    musicBtn.innerHTML = '🎵🎵 快乐邮递局';
+                } else {
+                    bgMusic.pause();
+                    musicBtn.innerHTML = '🎵🎵 点击继续';
+                }
+            }
+        });
+
+        // 其他函数保持不变（createCountdownDisplay, startCountdown, closePopup等）
+        function createCountdownDisplay() {
+            countdownDisplay = document.createElement('div');
+            countdownDisplay.id = 'countdown-display';
+            countdownDisplay.innerHTML = '倒计时: <span id="countdown-timer">10</span>秒';
+            document.body.appendChild(countdownDisplay);
+        }
+
+        function startCountdown() {
+            let timeLeft = 10;
+            updateCountdownDisplay(timeLeft);
+            
+            countdownInterval = setInterval(() => {
+                timeLeft--;
+                updateCountdownDisplay(timeLeft);
+                
+                if (timeLeft <= 0) {
+                    clearInterval(countdownInterval);
+                    if (countdownDisplay && countdownDisplay.parentNode) {
+                        countdownDisplay.parentNode.removeChild(countdownDisplay);
+                    }
+                }
+            }, 1000);
+        }
+
+        function updateCountdownDisplay(timeLeft) {
+            if (countdownDisplay) {
+                const timerElement = document.getElementById('countdown-timer');
+                if (timerElement) {
+                    timerElement.textContent = timeLeft;
+                    if (timeLeft <= 3) {
+                        timerElement.style.color = '#ff6b6b';
+                    } else if (timeLeft <= 7) {
+                        timerElement.style.color = '#ffcc00';
+                    } else {
+                        timerElement.style.color = '#4ecdc4';
+                    }
+                }
+            }
+        }
+
+        function closePopup(popup) {
+            popup.style.opacity = '0';
+            popup.style.transform = 'scale(0.8)';
+            setTimeout(() => {
+                if (popup.parentNode) {
+                    popup.parentNode.removeChild(popup);
+                    activePopups--;
+                    checkAllPopupsClosed();
+                }
+            }, 300);
+        }
+
+        function checkAllPopupsClosed() {
+            if (activePopups === 0) {
+                showFinalHint();
+                if (countdownInterval) {
+                    clearInterval(countdownInterval);
+                }
+                if (countdownDisplay && countdownDisplay.parentNode) {
+                    countdownDisplay.parentNode.removeChild(countdownDisplay);
+                }
+            }
+        }
+
+        function showFinalHint() {
+            const hint = document.createElement('div');
+            hint.className = 'final-hint';
+            hint.innerHTML = '万事胜意<br>许你平安喜樂!';
+            document.body.appendChild(hint);
+            
+            setTimeout(() => hint.style.opacity = '1', 100);
+            setTimeout(() => {
+                hint.style.opacity = '0';
+                setTimeout(() => {
+                    if (hint.parentNode) hint.parentNode.removeChild(hint);
+                }, 1000);
+            }, 5000);
+        }
+
+        function createPopup() {
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+
+            const popup = document.createElement('div');
+            popup.className = 'popup';
+
+            const width = Math.min(Math.floor(Math.random() * 100) + 200, screenWidth - 40);
+            const height = Math.floor(Math.random() * 30) + 50;
+
+            const x = Math.floor(Math.random() * (screenWidth - width));
+            const y = Math.floor(Math.random() * (screenHeight - height));
+
+            popup.style.width = width + 'px';
+            popup.style.height = height + 'px';
+            popup.style.left = x + 'px';
+            popup.style.top = y + 'px';
+            popup.style.backgroundColor = bgColors[Math.floor(Math.random() * bgColors.length)];
+            popup.style.fontSize = (Math.floor(Math.random() * 4) + 14) + 'px';
+
+            const tipText = tips[Math.floor(Math.random() * tips.length)];
+
+            popup.innerHTML = `
+                <div class="close-btn">×</div>
+                <div class="message">${tipText}</div>
+            `;
+
+            document.getElementById('popup-container').appendChild(popup);
+            activePopups++;
+
+            const closeBtn = popup.querySelector('.close-btn');
+            closeBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                closePopup(popup);
+            });
+
+            popup.addEventListener('click', function() {
+                closePopup(popup);
+            });
+
+            popupCount++;
+            return popup;
+        }
+
+        function createMultiplePopups(count) {
+            popupCount = 0;
+            activePopups = 0;
+            
+            const popupInterval = 300;
+            
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    createPopup();
+                    if (i === count - 1) {
+                        setTimeout(startCountdown, 100);
+                    }
+                }, i * popupInterval);
+            }
+        }
+    </script>
+</body>
+</html>
